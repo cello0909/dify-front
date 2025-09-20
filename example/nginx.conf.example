@@ -11,10 +11,10 @@ http {
         server_name localhost;
         root /app/html;  # 设置根目录
 
-        # 处理所有请求（包括 /dify-chat/）
+        # 处理所有请求（包括 /chat/）
         location / {
             # 对于 SPA 应用，确保所有路由都返回 index.html
-            try_files $uri $uri/ /dify-chat/index.html;
+            try_files $uri $uri/ /chat/index.html;
             
             # 设置正确的MIME类型
             types {

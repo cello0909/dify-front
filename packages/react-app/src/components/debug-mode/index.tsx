@@ -98,7 +98,7 @@ const DebugMode: React.FC<DebugModeProps> = ({ className }) => {
 				message.success('调试配置保存成功')
 				setTimeout(() => {
 					// 刷新页面以应用新配置
-					window.location.href = '/dify-chat'
+					window.location.href = '/chat'
 				}, 1000)
 			},
 		},
@@ -116,7 +116,7 @@ const DebugMode: React.FC<DebugModeProps> = ({ className }) => {
 				localStorage.removeItem(DEBUG_APPS_KEY)
 				message.success('调试配置已清空')
 				setTimeout(() => {
-					window.location.href = '/dify-chat'
+					window.location.href = '/chat'
 				}, 1000)
 				return
 			}
@@ -238,7 +238,7 @@ const DebugMode: React.FC<DebugModeProps> = ({ className }) => {
 									sessionStorage.removeItem(DEBUG_MODE_KEY)
 									message.success('调试配置已清空')
 									setTimeout(() => {
-										window.location.href = '/dify-chat'
+										window.location.href = '/chat'
 									}, 1000)
 								}}
 							>

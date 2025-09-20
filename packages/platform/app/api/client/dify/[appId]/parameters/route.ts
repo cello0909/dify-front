@@ -25,16 +25,26 @@ export async function GET(
 		}
 
 		// 转发请求到 Dify API
-		const response = await fetch(`${app.requestConfig.apiBase}/parameters`, {
+		const url = `${app.requestConfig.apiBase}/parameters`
+		console.log(`[DEBUG] Fetching parameters for app ${appId} from Dify API: ${url}`)
+
+		const response = await fetch(url, {
 			method: 'GET',
 			headers: {
 				Authorization: `Bearer ${app.requestConfig.apiKey}`,
 			},
 		})
 
-		// 返回响应
+		console.log(`[DEBUG] Dify API response status:`, response.status)
+		console.log(`[DEBUG] Dify API response headers:`, Object.fromEntries(response.headers.entries()))
+
 		const data = await response.json()
-		return NextResponse.json(data, { status: response.status })
+		console.log(`[DEBUG] Dify API response data:`, JSON.stringify(data, null, 2))
+
+		// 返回响应
+		const apiResponse = NextResponse.json(data, { status: response.status })
+		console.log(`[DEBUG] Platform API response headers:`, Object.fromEntries(apiResponse.headers.entries()))
+		return apiResponse
 	} catch (error) {
 		console.error(`Error fetching app parameters from Dify API:`, error)
 		return NextResponse.json({ error: 'Failed to fetch app parameters' }, { status: 500 })

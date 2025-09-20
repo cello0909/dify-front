@@ -34,7 +34,7 @@ export default function App() {
 			}}
 		>
 			<BrowserRouter
-				basename="/dify-chat"
+				basename="/chat"
 				routes={routes}
 			>
 				<LayoutIndex />

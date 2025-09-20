@@ -22,14 +22,28 @@ export async function GET(
 		}
 
 		// 代理请求到 Dify API
+		console.log(`[DEBUG] Fetching site settings for app ${appId} from Dify API: ${app.requestConfig.apiBase}/site`)
 		const response = await proxyDifyRequest(
 			app.requestConfig.apiBase,
 			app.requestConfig.apiKey,
 			'/site',
 		)
 
+		console.log(`[DEBUG] Dify API response status:`, response.status)
+		console.log(`[DEBUG] Dify API response headers:`, Object.fromEntries(response.headers.entries()))
+
 		const data = await response.json()
-		return createDifyApiResponse(data, response.status)
+		console.log(`[DEBUG] Dify API response data:`, JSON.stringify(data, null, 2))
+
+		const apiResponse = createDifyApiResponse(data, response.status)
+
+		// 添加缓存控制头，防止数据被缓存
+		apiResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+		apiResponse.headers.set('Pragma', 'no-cache')
+		apiResponse.headers.set('Expires', '0')
+
+		console.log(`[DEBUG] Platform API response headers:`, Object.fromEntries(apiResponse.headers.entries()))
+		return apiResponse
 	} catch (error) {
 		const resolvedParams = await params
 		return handleApiError(error, `Error fetching app site settings for ${resolvedParams.appId}`)

@@ -6,10 +6,10 @@ server {
     ${CERTBOT_CONFIG}
     
 
-    location ^~ /dify-chat/ {
+    location ^~ /chat/ {
         root /app;
         index index.html;
-        rewrite ^/dify-chat/(apps|chat|app/[^/]+)(/.*)?$ /dify-chat/ last;
+        rewrite ^/chat/(apps|chat|app/[^/]+)(/.*)?$ /chat/ last;
         # 安全控制
         disable_symlinks on;
     }
