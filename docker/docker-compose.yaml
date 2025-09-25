@@ -1,6 +1,6 @@
 services:
-  # Certbot service
-  # use `docker-compose --profile certbot up` to start the certbot service.
+  # Certbot service (disabled by default)
+  # Use `docker-compose --profile certbot up certbot` to start the certbot service.
   certbot:
     image: certbot/certbot
     profiles:
@@ -15,6 +15,7 @@ services:
     env_file: .env
     entrypoint: ['/docker-entrypoint.sh']
     command: ['tail', '-f', '/dev/null']
+    restart: "no"
   dify-chat:
     container_name: dify-chat
     image: ${DOCKER_IMAGE}
@@ -26,12 +27,29 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/docker-entrypoint.sh:/docker-entrypoint-mount.sh
       - ./nginx/ssl:/etc/ssl
-      - ./certbot/conf/live:/etc/letsencrypt/live # cert dir (with certbot container)
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/html
+      # Only mount certbot volumes if SSL certificates exist
+      - ./certbot/conf/live:/etc/letsencrypt/live:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/html:ro
     ports:
       - ${EXPOSE_NGINX_PORT}:${NGINX_PORT}
       - ${EXPOSE_NGINX_SSL_PORT}:${NGINX_SSL_PORT}
+    environment:
+      # React App API URLs (runtime injection)
+      - PUBLIC_APP_API_BASE=${PUBLIC_APP_API_BASE:-http://localhost:5300/api/client}
+      - PUBLIC_DIFY_PROXY_API_BASE=${PUBLIC_DIFY_PROXY_API_BASE:-http://localhost:5300/api/client/dify}
+      # Platform backend environment
+      - NODE_ENV=production
+      - PORT=5300
+      - DATABASE_URL=${DATABASE_URL:-file:./prod.db}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:5300/ || curl -f http://localhost/chat/index.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     entrypoint:
       [
         'sh',
@@ -40,7 +58,6 @@ services:
       ]
     networks:
       - dify-chat
-    restart: on-failure
     env_file: .env
 networks:
   dify-chat:

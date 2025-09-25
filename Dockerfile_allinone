@@ -36,12 +36,11 @@ RUN apt-get update && \
 # Build the base packages
 RUN pnpm build:pkgs
 
-# Copy example environment files to the appropriate locations
-RUN cp ./example/env-frontend.example ./packages/react-app/.env && \
-    cp ./example/env-backend.example ./packages/platform/.env
-
-# Build the React app
+# Build the React app with environment variables
 RUN cd packages/react-app && \
+    # Use default environment variables for build
+    export PUBLIC_APP_API_BASE=${PUBLIC_APP_API_BASE:-http://localhost:5300/api/client} && \
+    export PUBLIC_DIFY_PROXY_API_BASE=${PUBLIC_DIFY_PROXY_API_BASE:-http://localhost:5300/api/client/dify} && \
     pnpm build && \
     cd ../..
 
@@ -52,8 +51,8 @@ RUN cd packages/platform && \
     cd ../..
 
 # Copy the built React app to the Nginx html directory
-RUN mkdir -p /app/html/dify-chat && \
-    cp -r ./packages/react-app/dist/* /app/html/dify-chat/ && \
+RUN mkdir -p /app/html/chat && \
+    cp -r ./packages/react-app/dist/* /app/html/chat/ && \
     rm -rf /etc/nginx/nginx.conf && \
     cp -r ./example/nginx.conf.example /etc/nginx/nginx.conf
 
@@ -88,8 +87,19 @@ RUN mkdir -p logs && \
 # Expose the application port
 EXPOSE 5300 80
 
-# Create startup script
+# Create startup script with runtime environment variable support
 RUN echo '#!/bin/bash\n\
+# Set runtime environment variables for React app\n\
+if [ ! -z "$PUBLIC_APP_API_BASE" ]; then\n\
+  # Replace API base URL in built JavaScript files\n\
+  find /app/html/chat -name "*.js" -exec sed -i "s|http://localhost:5300/api/client|$PUBLIC_APP_API_BASE|g" {} \\;\n\
+fi\n\
+\n\
+if [ ! -z "$PUBLIC_DIFY_PROXY_API_BASE" ]; then\n\
+  # Replace Dify proxy API base URL in built JavaScript files\n\
+  find /app/html/chat -name "*.js" -exec sed -i "s|http://localhost:5300/api/client/dify|$PUBLIC_DIFY_PROXY_API_BASE|g" {} \\;\n\
+fi\n\
+\n\
 # 启动 Nginx\n\
 nginx -g "daemon off;" &\n\
 # 启动 Node.js 后端（PM2）\n\
@@ -100,7 +110,7 @@ RUN chmod +x /app/start.sh
 
 # Define health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:5300/ || curl -f http://localhost/dify-chat/index.html || exit 1
+  CMD curl -f http://localhost:5300/ || curl -f http://localhost/chat/index.html || exit 1
 
 # Start the application
 CMD ["/app/start.sh"]
